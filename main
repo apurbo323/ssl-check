@@ -1,0 +1,27 @@
+const https = require('https');
+
+function checkSSL(domain) {
+    return new Promise((resolve, reject) => {
+        const req = https.request({
+            method: 'HEAD',
+            host: domain,
+            port: 443,
+            path: '/',
+            agent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        }, (res) => {
+            const certificate = res.connection.getPeerCertificate();
+            if (res.client.authorized) {
+                resolve({ssl: 'Yes', certificate});
+            } else if (certificate) {
+                resolve({ssl: 'No', reason: res.client.authorizationError, certificate});
+            } else {
+                resolve({ssl: 'No', reason: 'No SSL'});
+            }
+        });
+
+        req.on('error', reject);
+        req.end();
+    });
+}
